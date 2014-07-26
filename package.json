@@ -1,22 +1,23 @@
 {
     "name": "promise",
-    "version": "0.0.1",
+    "version": "0.8.0",
     "description": "A promise respecting ES standard with plenty of handy extensions",
     "main": "promise.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
+    "dependencies": {},
+    "author": "otakustay@gmail.com",
+    "homepage": "https://github.com/ecomfe/promise",
+    "repository": "https://github.com/ecomfe/promise",
+    "license": "BSD",
+    "readme": "README.md",
     "edp": {
         "wwwroot": "/",
         "depDir": "dep",
         "srcDir": "src",
         "loaderAutoConfig": "js,htm,html,tpl,vm,phtml",
         "loaderUrl": "http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-2/esl.js",
-        "dependencies": {}
-    },
-    "dependencies": {},
-    "author": "otakustay@gmail.com",
-    "repository": "empty",
-    "license": "BSD",
-    "readme": "README"
+        "dependencies": {
+            "mini-event": "1.x",
+            "eoo": "0.x"
+        }
+    }
 }
