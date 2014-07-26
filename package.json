@@ -12,7 +12,10 @@
         "srcDir": "src",
         "loaderAutoConfig": "js,htm,html,tpl,vm,phtml",
         "loaderUrl": "http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-2/esl.js",
-        "dependencies": {}
+        "dependencies": {
+            "mini-event": "1.x",
+            "eoo": "0.x"
+        }
     },
     "dependencies": {},
     "author": "otakustay@gmail.com",
