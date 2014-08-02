@@ -1,10 +1,12 @@
 {
     "name": "promise",
-    "version": "0.8.0",
+    "version": "1.0.0",
     "description": "A promise respecting ES standard with plenty of handy extensions",
-    "main": "promise.js",
-    "dependencies": {},
-    "author": "otakustay@gmail.com",
+    "main": "Promise.js",
+    "dependencies": {
+        "eoo": "0.0.8"
+    },
+    "author": "d_xinxin@163.com",
     "homepage": "https://github.com/ecomfe/promise",
     "repository": "https://github.com/ecomfe/promise",
     "license": "BSD",
@@ -17,7 +19,11 @@
         "loaderUrl": "http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-2/esl.js",
         "dependencies": {
             "mini-event": "1.x",
-            "eoo": "0.x"
+            "eoo": "0.x",
+            "esl": "1.x"
         }
+    },
+    "devDependencies": {
+        "promises-aplus-tests": "^2.0.4"
     }
 }
