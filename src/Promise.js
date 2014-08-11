@@ -58,7 +58,8 @@ void function (define, global, undefined) {
                             chain(u.bind(then, value), this);
                             return;
                         }
-                    } catch (e) {
+                    }
+                    catch (e) {
                         // spec:
                         // If calling then throws an exception e,
                         // If resolvePromise or rejectPromise have been called, ignore it.
@@ -102,10 +103,11 @@ void function (define, global, undefined) {
                             method = resolve;
                         }
                         method(value);
-                    } catch (e) {
+                    }
+                    catch (e) {
                         reject(e);
                     }
-                }
+                };
             }
 
             function chain(then, capacity) {
@@ -127,8 +129,9 @@ void function (define, global, undefined) {
                                 called = true;
                             }
                         );
-                    } catch (e) {
-                        !called && reject(e)
+                    }
+                    catch (e) {
+                        !called && reject(e);
                     }
                 });
                 chainedPromise.then(function (v) {
@@ -149,7 +152,8 @@ void function (define, global, undefined) {
                 if (capacity.status === FULFILLED) {
                     capacity.rejectedCallbacks = [];
                     callbacks = capacity.fulfilledCallbacks;
-                } else {
+                }
+                else {
                     capacity.fulfilledCallbacks = [];
                     callbacks = capacity.rejectedCallbacks;
                 }
@@ -159,9 +163,9 @@ void function (define, global, undefined) {
                     var val = capacity.result;
 
                     while (callback = callbacks.shift()) {
-                        callback(val)
+                        callback(val);
                     }
-                })
+                });
             }
 
 
@@ -218,7 +222,7 @@ void function (define, global, undefined) {
              * promise.then(undefined, onRejected) 的语法糖。
              *
              * @member Promise
-             * @param onRejected
+             * @param {Function} onRejected
              * @returns {Promise}
              */
             exports['catch'] = function (onRejected) {
@@ -331,9 +335,7 @@ void function (define, global, undefined) {
                     return object;
                 }
 
-                return new Promise(function (resolve) {
-                    resolve(object);
-                });
+                return new Promise(function (resolve) { resolve(object); });
             };
 
             return typeof global.Promise === 'function' ? global.Promise : Promise;

@@ -31,20 +31,23 @@ void function (define) {
              * @param {Mixed...} args 固定的参数
              * @return {Function} 固定了`this`变量和若干参数后的新函数对象
              */
-            util.bind = nativeBind
-                ? function (fn) {
-                return nativeBind.apply(fn, [].slice.call(arguments, 1));
-            }
-                : function (fn, thisObject) {
-                var extraArgs = [].slice.call(arguments, 2);
-                return function () {
-                    var args = extraArgs.concat([].slice.call(arguments));
-                    return fn.apply(thisObject, args);
+            if (typeof nativeBind === 'function') {
+                util.bind = function (fn) {
+                    return nativeBind.apply(fn, [].slice.call(arguments, 1));
                 };
-            };
+            }
+            else {
+                util.bind = function (fn, thisObject) {
+                    var extraArgs = [].slice.call(arguments, 2);
+                    return function () {
+                        var args = extraArgs.concat([].slice.call(arguments));
+                        return fn.apply(thisObject, args);
+                    };
+                };
+            }
 
             util.isArray = function (obj) {
-                return Object.prototype.toString.call(obj) === "[object Array]";
+                return Object.prototype.toString.call(obj) === '[object Array]';
             };
 
             util.getThen = function (promise) {
