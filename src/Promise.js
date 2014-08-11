@@ -10,7 +10,6 @@ void function (define, global, undefined) {
     define(
         function (require) {
             var u = require('./util');
-            var oo = require('eoo');
 
             var PENDING = 'pending';
             var FULFILLED = 'fulfilled';
@@ -22,21 +21,25 @@ void function (define, global, undefined) {
                 : function (fn) { setTimeout(fn, 0); };
 
             /**
-             * @class PromiseCapacity promise容器类，等价于以前的 Deferred
+             * promise容器类，等价于以前的 Deferred
+             *
+             * @constructor
              */
-            var PromiseCapacity = oo.create({
-                constructor: function (promise) {
-                    this.promise = promise;
-                    this.status = PENDING;
-                    // spec:
-                    // A promise is resolved if it is not pending or
-                    // if it has been "locked in" match the state of another promise
-                    // see: https://github.com/domenic/promises-unwrapping
-                    this.isResolved = false;
-                    this.result = undefined;
-                    this.fulfilledCallbacks = [];
-                    this.rejectedCallbacks = [];
-                },
+            function PromiseCapacity(promise) {
+                this.promise = promise;
+                this.status = PENDING;
+                // spec:
+                // A promise is resolved if it is not pending or
+                // if it has been "locked in" match the state of another promise
+                // see: https://github.com/domenic/promises-unwrapping
+                this.isResolved = false;
+                this.result = undefined;
+                this.fulfilledCallbacks = [];
+                this.rejectedCallbacks = [];
+            }
+
+            PromiseCapacity.prototype = {
+                constructor: PromiseCapacity,
 
                 resolve: function (value) {
                     if (this.status !== PENDING || this.isResolved) {
@@ -93,7 +96,7 @@ void function (define, global, undefined) {
                     exec(this);
                     return promise;
                 }
-            });
+            };
 
             function createCallback(method, callback, resolve, reject) {
                 return function (value) {
@@ -168,9 +171,6 @@ void function (define, global, undefined) {
                 });
             }
 
-
-            var exports = {};
-
             /**
              * 创建一个新的 Promise 对象，会执行 executor，并传入 resolve 和 reject 两个函数：
              * resolve(thenable)，你的 Promise 将会根据这个 “thenable” 对象的结果而返回肯定/否定结果
@@ -180,10 +180,9 @@ void function (define, global, undefined) {
              * 构造器的回调函数中抛出的错误会被立即传递给 reject()。
              *
              * @constructor
-             * @member Promise
              * @param {Function} executor
              */
-            exports.constructor = function (executor) {
+            function Promise(executor) {
                 if (typeof executor !== 'function') {
                     throw new TypeError('Promise resolver undefined is not a function');
                 }
@@ -200,8 +199,7 @@ void function (define, global, undefined) {
                 // 不想将私有状态挂在 promise 上，所以只能动态绑定了。
                 this.then = u.bind(capacity.then, capacity);
                 executor(u.bind(capacity.resolve, capacity), u.bind(capacity.reject, capacity));
-
-            };
+            }
 
             /**
              * 当 promise 以肯定结束时会调用 onFulfilled。 当 promise 以否定结束时会调用 onRejected。
@@ -216,7 +214,7 @@ void function (define, global, undefined) {
              * @param {Function | null | undefined} onReject
              * @returns {Promise}
              */
-            exports.then = function (onFulfilled, onReject) { };
+            Promise.prototype.then = function (onFulfilled, onReject) { };
 
             /**
              * promise.then(undefined, onRejected) 的语法糖。
@@ -225,11 +223,9 @@ void function (define, global, undefined) {
              * @param {Function} onRejected
              * @returns {Promise}
              */
-            exports['catch'] = function (onRejected) {
+            Promise.prototype['catch'] = function (onRejected) {
                 return this.then(null, onRejected);
             };
-
-            var Promise = require('eoo').create(exports);
 
             Promise.resolve = function (value) {
                 return new Promise(function (resolve) { resolve(value); });
