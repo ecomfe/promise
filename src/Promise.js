@@ -16,9 +16,7 @@ void function (define, global, undefined) {
             var REJECTED = 'rejected';
 
 
-            var setImmediate = typeof global.setImmediate === 'function'
-                ? function (fn) { setImmediate(fn); }
-                : function (fn) { setTimeout(fn, 0); };
+            var setImmediate = require('./setImmediate');
 
             /**
              * promise容器类，等价于以前的 Deferred
