@@ -205,7 +205,7 @@ void function (define, global, undefined) {
              * 当 promise 以肯定结束时会调用 onFulfilled。 当 promise 以否定结束时会调用 onRejected。
              * 这两个参数都是可选的，当任意一个未定义时，对它的调用会跳转到 then 链的下一个 onFulfilled/onRejected 上。
              * 这两个回调函数均只接受一个参数，肯定结果或者否定原因。
-             * 当 Promise.resolve 肯定结束之后，then 会返回一个新的 Promise，
+             * 当 Promise 肯定结束之后，then 会返回一个新的 Promise，
              * 这个 Promise 相当于你从 onFulfilled/onRejected 中返回的值。
              * 如果回调中抛出任何错误，返回的 Promise 也会以此错误作为否定结果结束。
              *
@@ -318,20 +318,20 @@ void function (define, global, undefined) {
             };
 
             /**
-             * 将 object 转化为 标准的 Promise 对象， 当 object 已经为 标准Promise 对象时，直接返回 object，
+             * 将 value 转化为 标准的 Promise 对象， 当 value 已经为 标准Promise 对象时，直接返回 value，
              * 其他情况等价于 Promise.resolve(object)
              *
              * @static
              * @member Promise
-             * @param {*} object
+             * @param {*} value
              * @returns {Promise}
              */
-            Promise.cast = function (object) {
-                if (object && typeof object === 'object' && object.constructor === this) {
-                    return object;
+            Promise.cast = function (value) {
+                if (value && typeof value === 'object' && value.constructor === this) {
+                    return value;
                 }
 
-                return new Promise(function (resolve) { resolve(object); });
+                return new Promise(function (resolve) { resolve(value); });
             };
 
             return typeof global.Promise === 'function' ? global.Promise : Promise;
