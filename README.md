@@ -2,6 +2,18 @@ promise
 =======
 符合 EcmaScript6 Promise 接口规范的实现
 
+# 测试
+## node 环境
+npm install & npm test
+
+## 浏览器环境
+打开run.html即可；若需要添加测试用例，需要使用 browserify 生成适合浏览器的脚本文件：
+
+```
+browserify test/spec/helpers/test-adapter.js test/spec/*.js node_modules/sinon/lib/{sinon.js,sinon/*.js} > test/test-browser.js
+```
+
+# API
 ## new Promise({Function} executor)
 
 创建一个新的 Promise 对象，会执行 executor，并传入 resolve 和 reject 两个函数：
