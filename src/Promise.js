@@ -15,7 +15,6 @@ void function (define, global, undefined) {
             var FULFILLED = 'fulfilled';
             var REJECTED = 'rejected';
 
-
             var setImmediate = require('./setImmediate');
 
             /**

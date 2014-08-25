@@ -14,19 +14,22 @@ void function (define) {
                 return this;
             }());
 
-            var callbackPool = [];
+            var callbackPool = {};
+            var cursor = 1;
 
             function registerCallback(callback) {
-                return callbackPool.push(callback) - 1;
+                callbackPool[cursor] = callback;
+                return cursor++;
             }
 
             function runCallback(tick) {
                 var callback = callbackPool[tick];
 
                 if (callback) {
+                    // 别跟我说`delete`影响性能，只有在使用HiddenClass的时候`delete`才可能导致优化失效，
+                    // 但这个对象本身属性数量就是不断增长/变化的（因为`cursor`递增），所以HiddenClass一开始就无法在这个对象上生效
+                    delete callbackPool[tick];
                     callback();
-                    // 控制数组大小，不要单纯设置`null`
-                    callback.splice(tick, 1);
                 }
             }
 
@@ -55,16 +58,18 @@ void function (define) {
                 var ensureElementMutation = function (mutations, observer) {
                     var item = mutations[0];
                     if (item.attributeName === ATTRIBUTE_NAME) {
-                        var tick = item.getAttribute(ATTRIBUTE_NAME);
+                        var tick = item.target.getAttribute(ATTRIBUTE_NAME);
                         runCallback(tick);
                         // 每次都是一个新的元素，所以要及时断开
                         observer.disconnect(item.target);
                     }
                 };
-                var observer = new MutationObserver(ensureElementMutation);
 
                 return function (callback) {
                     var element = document.createElement('div');
+                    // 从异步来说，每个callstack应该只执行一个函数，因此这里不能共享`MutationObserver`实例，
+                    // 共享的情况下，由于浏览器使用的是microtask queue，会让多次变更在一次回调中体现，导致无法保持单独的callstack
+                    var observer = new MutationObserver(ensureElementMutation);
                     observer.observe(element, { attributes: true });
 
                     var tick = registerCallback(callback);

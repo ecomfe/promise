@@ -383,7 +383,7 @@ var sinon = (function (formatio) {
     return sinon;
 }(typeof formatio == "object" && formatio));
 
-},{"./sinon/assert":2,"./sinon/behavior":3,"./sinon/call":4,"./sinon/collection":5,"./sinon/match":6,"./sinon/mock":7,"./sinon/sandbox":8,"./sinon/spy":9,"./sinon/stub":10,"./sinon/test":11,"./sinon/test_case":12,"formatio":14,"util":41}],2:[function(require,module,exports){
+},{"./sinon/assert":2,"./sinon/behavior":3,"./sinon/call":4,"./sinon/collection":5,"./sinon/match":6,"./sinon/mock":7,"./sinon/sandbox":8,"./sinon/spy":9,"./sinon/stub":10,"./sinon/test":11,"./sinon/test_case":12,"formatio":14,"util":42}],2:[function(require,module,exports){
 (function (global){
 /**
  * @depend ../sinon.js
@@ -924,7 +924,7 @@ var sinon = (function (formatio) {
 }(typeof sinon == "object" && sinon || null));
 
 }).call(this,require('_process'))
-},{"../sinon":1,"_process":39}],4:[function(require,module,exports){
+},{"../sinon":1,"_process":40}],4:[function(require,module,exports){
 /**
   * @depend ../sinon.js
   * @depend match.js
@@ -3924,10 +3924,7 @@ void function (define, global, undefined) {
             var FULFILLED = 'fulfilled';
             var REJECTED = 'rejected';
 
-
-            var setImmediate = typeof global.setImmediate === 'function'
-                ? function (fn) { setImmediate(fn); }
-                : function (fn) { setTimeout(fn, 0); };
+            var setImmediate = require('./setImmediate');
 
             /**
              * promise容器类，等价于以前的 Deferred
@@ -4251,7 +4248,165 @@ void function (define, global, undefined) {
     : function (factory) { module.exports = factory(require); }, this);
 
 
-},{"./util":17}],17:[function(require,module,exports){
+},{"./setImmediate":17,"./util":18}],17:[function(require,module,exports){
+/**
+ * Promise
+ * Copyright 2014 Baidu Inc. All rights reserved.
+ *
+ * @ignore
+ * @file setImmediate兼容方法
+ * @author otakustay
+ */
+void function (define) {
+    define(
+        function (require) {
+            return function (fn) {
+                setTimeout(fn, 0);
+            }
+            // 需要返回值，不能用`void`
+            var global = (function () {
+                return this;
+            }());
+
+            var callbackPool = {};
+            var cursor = 1;
+
+            function registerCallback(callback) {
+                callbackPool[cursor] = callback;
+                return cursor++;
+            }
+
+            function runCallback(tick) {
+                var callback = callbackPool[tick];
+
+                if (callback) {
+                    // 别跟我说`delete`影响性能，只有在使用HiddenClass的时候`delete`才可能导致优化失效，
+                    // 但这个对象本身属性数量就是不断增长/变化的（因为`cursor`递增），所以HiddenClass一开始就无法在这个对象上生效
+                    delete callbackPool[tick];
+                    callback();
+                }
+            }
+
+            // 依次使用以下方法：
+            //
+            // 原生`setImmediate`方法
+            // `nextTick` - 仅用于NodeJS v0.9以前版本
+            // `MutationObserver`
+            // `postMessage` - IE8-9，主线程内
+            // `MessageChannel` - WebWorker内
+            // `script.onreadystatechange` - IE6-7
+            // `setTimeout` - 鬼知道是啥
+            //
+            // 主要参考自https://github.com/YuzuJS/setImmediate
+            if (typeof global.setImmediate === 'function') {
+                return global.setImmediate;
+            }
+
+            if (typeof global.nextTick === 'function') {
+                return global.nextTick;
+            }
+
+            if (global.MutationObserver || global.webKitMutationObserver) {
+                var ATTRIBUTE_NAME = 'data-promise-tick';
+                var MutationObserver = global.MutationObserver || global.webKitMutationObserver;
+                var ensureElementMutation = function (mutations, observer) {
+                    var item = mutations[0];
+                    if (item.attributeName === ATTRIBUTE_NAME) {
+                        var tick = item.target.getAttribute(ATTRIBUTE_NAME);
+                        runCallback(tick);
+                        // 每次都是一个新的元素，所以要及时断开
+                        observer.disconnect(item.target);
+                    }
+                };
+
+                return function (callback) {
+                    var element = document.createElement('div');
+                    // 从异步来说，每个callstack应该只执行一个函数，因此这里不能共享`MutationObserver`实例，
+                    // 共享的情况下，由于浏览器使用的是microtask queue，会让多次变更在一次回调中体现，导致无法保持单独的callstack
+                    var observer = new MutationObserver(ensureElementMutation);
+                    observer.observe(element, { attributes: true });
+
+                    var tick = registerCallback(callback);
+                    element.setAttribute(ATTRIBUTE_NAME, tick);
+                };
+            }
+
+
+            // 要判断不在`WebWorker`内
+            if (typeof postMessage === 'function' && typeof global.importScript !== 'function') {
+                // 部分IE的`postMessage`的`callback`是同步触发的，要去掉这一批
+                var isPostMessageAsync = true;
+                var oldListener = global.onmessage;
+                global.onmessage = function() {
+                    isPostMessageAsync = false;
+                };
+                global.postMessage('', '*');
+                global.onmessage = oldListener;
+
+                if (isPostMessageAsync) {
+                    var MESSAGE_PREFIX = 'promise-tick-';
+
+                    var ensureMessage = function (e) {
+                        if (e.source === global && typeof e.data === 'string' && e.data.indexOf(MESSAGE_PREFIX) === 0) {
+                            var tick = e.data.substring(MESSAGE_PREFIX.length);
+                            runCallback(tick);
+                        }
+                    };
+                    if (global.addEventListener) {
+                        global.addEventListener('message', ensureMessage, false);
+                    }
+                    else {
+                        global.attachEvent('onmessage', ensureMessage);
+                    }
+
+                    return function (callback) {
+                        var tick = registerCallback(callback);
+                        global.postMessage(MESSAGE_PREFIX + tick, '*');
+                    };
+                }
+            }
+
+            if (global.MessageChannel) {
+                var channel = new MessageChannel();
+                channel.port1.onmessage = function (e) {
+                    var tick = e.data;
+                    runCallback(tick);
+                };
+
+                return function (callback) {
+                    var tick = registerCallback(callback);
+                    channel.port2.postMessage(tick);
+                };
+            }
+
+            if ('onreadystatechange' in document.createElement('script')) {
+                var documentElement = document.documentElement;
+                return function (callback) {
+                    var script = document.createElement('script');
+                    script.onreadystatechange = function () {
+                        callback();
+                        // 因为`readystatechange`事件会运行多次（0-4），因此执行一次后立刻去掉
+                        script.onreadystatechange = null;
+                        // 移除元素避免太多
+                        documentElement.removeChild(script);
+                        // 避免低版本IE内存泄漏
+                        script = null;
+                    };
+
+                    // 不要问为啥可以直接往`<html>`里插入，IE就是可以
+                    documentElement.appendChild(script);
+                };
+            }
+
+            return function (callback) {
+                setTimeout(callback, 0);
+            };
+        }
+    );
+}(typeof define === 'function' && define.amd ? define
+    : function (factory) { module.exports = factory(require); }, this);
+
+},{}],18:[function(require,module,exports){
 /**
  * Promise
  * Copyright 2014 Baidu Inc. All rights reserved.
@@ -4314,7 +4469,7 @@ void function (define) {
 }(typeof define === 'function' && define.amd ? define
     : function (factory) { module.exports = factory(require); }, this);
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -4393,7 +4548,7 @@ describe("2.1.2.1: When fulfilled, a promise: must not transition to any other s
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/testThreeCases":33,"assert":35}],19:[function(require,module,exports){
+},{"./helpers/testThreeCases":34,"assert":36}],20:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -4473,7 +4628,7 @@ describe("2.1.3.1: When rejected, a promise: must not transition to any other st
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/testThreeCases":33,"assert":35}],20:[function(require,module,exports){
+},{"./helpers/testThreeCases":34,"assert":36}],21:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -4554,7 +4709,7 @@ describe("2.2.1: Both `onFulfilled` and `onRejected` are optional arguments.", f
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -4709,7 +4864,7 @@ describe("2.2.2: If `onFulfilled` is a function,", function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/testThreeCases":33,"assert":35}],22:[function(require,module,exports){
+},{"./helpers/testThreeCases":34,"assert":36}],23:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -4864,7 +5019,7 @@ describe("2.2.3: If `onRejected` is a function,", function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/testThreeCases":33,"assert":35}],23:[function(require,module,exports){
+},{"./helpers/testThreeCases":34,"assert":36}],24:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -5050,7 +5205,7 @@ describe("2.2.4: `onFulfilled` or `onRejected` must not be called until the exec
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/testThreeCases":33,"assert":35}],24:[function(require,module,exports){
+},{"./helpers/testThreeCases":34,"assert":36}],25:[function(require,module,exports){
 (function (global){
 /*jshint strict: false */
 
@@ -5101,7 +5256,7 @@ describe("2.2.5 `onFulfilled` and `onRejected` must be called as functions (i.e.
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"assert":35}],25:[function(require,module,exports){
+},{"assert":36}],26:[function(require,module,exports){
 "use strict";
 
 var assert = require("assert");
@@ -5360,7 +5515,7 @@ describe("2.2.6: `then` may be called multiple times on the same promise.", func
     });
 });
 
-},{"./helpers/testThreeCases":33,"assert":35,"sinon":1}],26:[function(require,module,exports){
+},{"./helpers/testThreeCases":34,"assert":36,"sinon":1}],27:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -5473,7 +5628,7 @@ describe("2.2.7: `then` must return a promise: `promise2 = promise1.then(onFulfi
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/reasons":31,"./helpers/testThreeCases":33,"assert":35}],27:[function(require,module,exports){
+},{"./helpers/reasons":32,"./helpers/testThreeCases":34,"assert":36}],28:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -5511,7 +5666,7 @@ describe("2.3.1: If `promise` and `x` refer to the same object, reject `promise`
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"assert":35}],28:[function(require,module,exports){
+},{"assert":36}],29:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -5641,7 +5796,7 @@ describe("2.3.2: If `x` is a promise, adopt its state", function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"assert":35}],29:[function(require,module,exports){
+},{"assert":36}],30:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -6615,7 +6770,7 @@ describe("2.3.3: Otherwise, if `x` is an object or function,", function () {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/reasons":31,"./helpers/thenables":34,"assert":35}],30:[function(require,module,exports){
+},{"./helpers/reasons":32,"./helpers/thenables":35,"assert":36}],31:[function(require,module,exports){
 "use strict";
 
 var assert = require("assert");
@@ -6686,7 +6841,7 @@ describe("2.3.4: If `x` is not an object or function, fulfill `promise` with `x`
     );
 });
 
-},{"./helpers/testThreeCases":33,"assert":35}],31:[function(require,module,exports){
+},{"./helpers/testThreeCases":34,"assert":36}],32:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -6746,7 +6901,7 @@ exports["a rejected promise"] = function () {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 (function (global){
 var Promise = require('../../../src/Promise');
 global.adapter = {
@@ -6768,7 +6923,7 @@ global.adapter = {
     }
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../../../src/Promise":16}],33:[function(require,module,exports){
+},{"../../../src/Promise":16}],34:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -6818,7 +6973,7 @@ exports.testRejected = function (reason, test) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -6964,7 +7119,7 @@ exports.rejected = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -7326,14 +7481,14 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":37}],36:[function(require,module,exports){
+},{"util/":38}],37:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -7923,7 +8078,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":36,"_process":39,"inherits":38}],38:[function(require,module,exports){
+},{"./support/isBuffer":37,"_process":40,"inherits":39}],39:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -7948,7 +8103,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -8013,8 +8168,8 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],40:[function(require,module,exports){
-module.exports=require(36)
 },{}],41:[function(require,module,exports){
 module.exports=require(37)
-},{"./support/isBuffer":40,"_process":39,"inherits":38}]},{},[32,18,19,20,21,22,23,24,25,26,27,28,29,30,1,2,3,4,5,6,7,8,9,10,11,12]);
+},{}],42:[function(require,module,exports){
+module.exports=require(38)
+},{"./support/isBuffer":41,"_process":40,"inherits":39}]},{},[33,19,20,21,22,23,24,25,26,27,28,29,30,31,1,2,3,4,5,6,7,8,9,10,11,12]);
