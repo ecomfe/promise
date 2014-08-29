@@ -2,7 +2,7 @@
   "name": "promise",
   "version": "1.0.0",
   "description": "A promise respecting ES standard with plenty of handy extensions",
-  "main": "Promise.js",
+  "main": "main.js",
   "author": "d_xinxin@163.com",
   "homepage": "https://github.com/ecomfe/promise",
   "repository": "https://github.com/ecomfe/promise",
