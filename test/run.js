@@ -24,7 +24,7 @@ var adapter = {
 };
 
 
-var testsDir = path.resolve(__dirname, "spec");
+var testsDir = path.resolve(__dirname, "spec/promise-aplus-tests");
 
 function run(adapter, mochaOpts, cb) {
     if (typeof mochaOpts === "function") {
