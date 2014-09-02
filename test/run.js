@@ -26,6 +26,8 @@ var adapter = {
 
 var testsDir = path.resolve(__dirname, "spec/promise-aplus-tests");
 
+var enhancements = [path.resolve(__dirname, "spec/syncMode.js")];
+
 function run(adapter, mochaOpts, cb) {
     if (typeof mochaOpts === "function") {
         cb = mochaOpts;
@@ -48,6 +50,9 @@ function run(adapter, mochaOpts, cb) {
                 var testFilePath = path.resolve(testsDir, testFileName);
                 mocha.addFile(testFilePath);
             }
+        });
+        enhancements.forEach(function (enhancement) {
+            mocha.addFile(enhancement);
         });
 
         global.adapter = adapter;

@@ -35,8 +35,8 @@ void function (define) {
                 this.result = undefined;
                 this.fulfilledCallbacks = [];
                 this.rejectedCallbacks = [];
-                this.syncModeEnabled = !!this.promise.syncModeEnabled;
-                this.invoke = this.syncModeEnabled ? syncInvoke : setImmediate;
+                this.syncModeEnabled = false;
+                this.invoke = setImmediate;
             }
 
             PromiseCapacity.prototype = {
@@ -89,10 +89,15 @@ void function (define) {
 
                 then: function (onFulfilled, onRejected) {
                     var capacity = this;
+                    this.syncModeEnabled = this.promise.syncModeEnabled;
+                    this.invoke = this.syncModeEnabled ? syncInvoke : setImmediate;
+
                     var promise = new this.promise.constructor(function (resolve, reject) {
                         capacity.fulfilledCallbacks.push(createCallback(resolve, onFulfilled, resolve, reject));
                         capacity.rejectedCallbacks.push(createCallback(reject, onRejected, resolve, reject));
                     });
+
+                    promise.syncModeEnabled = this.syncModeEnabled;
 
                     exec(this);
                     return promise;
