@@ -26,11 +26,11 @@ void function (define, global) {
             }
 
             /**
-             * 返回一个{@link meta.Promise}对象，
+             * 返回一个{@link Promise}对象，
              * 当指定的模块被AMD加载器加载后，进入`resolved`状态
              *
              * @param {string[]} modules 需要加载的模块列表
-             * @return {meta.Promise}
+             * @return {Promise}
              * @static
              */
             function promiseRequire(modules) {
@@ -59,7 +59,7 @@ void function (define, global) {
              * @see https://github.com/domenic/promises-unwrapping/issues/18
              *
              * @param {Function} callback 回调函数
-             * @returns {meta.Promise}
+             * @returns {Promise}
              */
             function ensure(callback) {
                 var Promise = this.constructor;
@@ -81,9 +81,33 @@ void function (define, global) {
                 );
             }
 
+            /**
+             * 触发传入的函数，将其返回值包装为 Promise 返回
+             *
+             * 函数返回普通值，则返回一个 resolved promise，提供的值为返回值
+             * 函数抛出异常，则返回一个 rejected promise，提供值为抛出的异常
+             * 函数返回Promise，则直接返回该Promise
+             *
+             * @param {Function} fn 待触发的函数
+             * @param {Object | null | undefined} thisObj 函数的 this 指向
+             * @param {*...} args 传递给函数的参数
+             * @return {Promise}
+             */
+            function invoke(fn, thisObj, args) {
+                try {
+                    args = [].slice.call(arguments, 2);
+                    var value = fn.apply(thisObj, args);
+                    return this.resolve(value);
+                }
+                catch (e) {
+                    return this.reject(e);
+                }
+            }
+
             return function (Promise) {
                 Promise.isPromise = isPromise;
                 Promise.require = promiseRequire;
+                Promise.invoke = invoke;
 
                 Promise.prototype['finally'] = ensure;
 
