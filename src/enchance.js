@@ -46,19 +46,50 @@ void function (define, global) {
             }
 
             /**
-             * 无论 promise 成功或者失败，都调用传入的函数
+             * 无论 promise 成功或者失败，都调用传入的回调函数。
+             * 回调函数不会改变 promise 的状态和值，同时也不会传递给 callback 任何值。
+             * callback 会继续传递当前 promise 的状态和值给新的 promise。
+             *
+             *
+             * 适用场景：
+             * 1. 无论 promise 成功或者失败，都要移除事件
+             * 2. 网络请求完成后（无论成功或者失败），隐藏菊花图
+             * 3. 测试的卸载阶段
+             *
+             * @see https://github.com/domenic/promises-unwrapping/issues/18
              *
              * @param {Function} callback 回调函数
              * @returns {meta.Promise}
              */
             function ensure(callback) {
-                return this.then(callback, callback);
+                var Promise = this.constructor;
+                return this.then(
+                    function (value) {
+                        Promise.resolve(callback()).then(
+                            function () {
+                                return value;
+                            }
+                        );
+                    },
+                    function (reason) {
+                        Promise.resolve(callback()).then(
+                            function () {
+                                throw reason;
+                            }
+                        )
+                    }
+                );
             }
 
             return function (Promise) {
                 Promise.isPromise = isPromise;
                 Promise.require = promiseRequire;
+
+                Promise.prototype['finally'] = ensure;
+
+                // 来几个alias，要不 es3 下用着烦
                 Promise.prototype.ensure = ensure;
+                Promise.prototype.fail = Promise.prototype['catch'];
 
                 return Promise;
             };
