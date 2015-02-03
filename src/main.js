@@ -11,8 +11,9 @@ void function (define) {
         function (require) {
             var Promise = require('./Promise');
             var enchance = require('./enchance');
+            var then = require('./then');
 
-            return enchance(Promise);
+            return then(enchance(Promise));
         }
     );
 
