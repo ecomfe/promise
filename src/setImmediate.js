@@ -45,7 +45,7 @@ void function (define) {
             //
             // 主要参考自https://github.com/YuzuJS/setImmediate
             if (typeof global.setImmediate === 'function') {
-                return global.setImmediate;
+                return global.setImmediate.bind(global);
             }
 
             if (typeof global.nextTick === 'function') {
