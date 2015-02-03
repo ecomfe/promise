@@ -26,7 +26,11 @@ var adapter = {
 
 var testsDir = path.resolve(__dirname, "spec/promise-aplus-tests");
 
-var enhancements = [path.resolve(__dirname, "spec/syncMode.js"), path.resolve(__dirname, "spec/invoke.js")];
+var enhancements = [
+    path.resolve(__dirname, "spec/syncMode.js"),
+    path.resolve(__dirname, "spec/invoke.js"),
+    path.resolve(__dirname, "spec/then.js")
+];
 
 function run(adapter, mochaOpts, cb) {
     if (typeof mochaOpts === "function") {
