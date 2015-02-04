@@ -68,14 +68,21 @@ describe("Promise.invoke test.", function () {
     specify("return promise", function (done) {
         var onFulfilledCalled = false;
         var value = {};
+        var empty = function () {};
         var d = Promise.invoke(function onFulfilled() {
             onFulfilledCalled = true;
-            return new Promise(function (resolve, reject) {
+
+            var promise = new Promise(function (resolve, reject) {
                 resolve(value);
             });
+
+            promise.abort = empty;
+
+            return promise;
         });
 
         assert.strictEqual(onFulfilledCalled, true);
+        assert.strictEqual(d.abort, empty);
 
         d = d.then(function (v) {
             assert.strictEqual(v, value);
