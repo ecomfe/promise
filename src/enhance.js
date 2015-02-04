@@ -104,10 +104,28 @@ void function (define, global) {
                 }
             }
 
+            /**
+             * 将 value 转化为 标准的 Promise 对象， 当 value 已经为 标准Promise 对象时，直接返回 value，
+             * 其他情况等价于 Promise.resolve(object)
+             *
+             * @static
+             * @member Promise
+             * @param {*} value
+             * @returns {Promise}
+             */
+            function cast(value) {
+                if (value && typeof value === 'object' && value.constructor === this) {
+                    return value;
+                }
+
+                return new this(function (resolve) { resolve(value); });
+            }
+
             return function (Promise) {
                 Promise.isPromise = isPromise;
                 Promise.require = promiseRequire;
                 Promise.invoke = invoke;
+                Promise.cast = cast;
 
                 Promise.prototype['finally'] = ensure;
 
