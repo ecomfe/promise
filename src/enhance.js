@@ -97,7 +97,7 @@ void function (define, global) {
                 try {
                     args = [].slice.call(arguments, 2);
                     var value = fn.apply(thisObj, args);
-                    return this.resolve(value);
+                    return isPromise(value) ? value : this.resolve(value);
                 }
                 catch (e) {
                     return this.reject(e);
