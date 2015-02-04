@@ -1,9 +1,9 @@
 /**
- * PromiseCapcity
+ * PromiseCapacity
  * Copyright 2014 Baidu Inc. All rights reserved.
  *
  * @ignore
- * @file PromiseCapcity
+ * @file PromiseCapacity
  * @author Exodia(d_xinxin@163.com)
  */
 void function (define) {
@@ -38,6 +38,12 @@ void function (define) {
                 this.syncModeEnabled = false;
                 this.invoke = setImmediate;
             }
+
+            PromiseCapacity.onResolve = function (value) {};
+            PromiseCapacity.onReject = function (reason) {
+                typeof console !== 'undefined' && console.error(reason);
+            };
+
 
             PromiseCapacity.prototype = {
                 constructor: PromiseCapacity,
@@ -74,6 +80,9 @@ void function (define) {
 
                     this.result = value;
                     this.status = FULFILLED;
+
+                    this.constructor.onResolve.call(this.promise, value);
+
                     exec(this);
                 },
 
@@ -84,6 +93,9 @@ void function (define) {
 
                     this.result = obj;
                     this.status = REJECTED;
+
+                    this.constructor.onReject.call(this.promise, obj);
+
                     exec(this);
                 },
 
@@ -180,6 +192,8 @@ void function (define) {
             return PromiseCapacity;
         }
     );
+    /* eslint-disable brace-style */
+    /* global module: true */
 }(typeof define === 'function' && define.amd ? define
     : function (factory) { module.exports = factory(require); }, this);
 

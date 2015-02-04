@@ -10,13 +10,16 @@ void function (define) {
     define(
         function (require) {
             var Promise = require('./Promise');
-            var enchance = require('./enchance');
+            var enhance = require('./enhance');
             var then = require('./then');
+            var hook = require('./hook');
 
-            return then(enchance(Promise));
+            return hook(then(enhance(Promise)));
         }
     );
 
+  /* eslint-disable brace-style */
+  /* global module: true */
 }(typeof define === 'function' && define.amd ? define
     : function (factory) { module.exports = factory(require); }, this);
 
