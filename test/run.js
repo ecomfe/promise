@@ -1,8 +1,11 @@
-var Promise = require('../src/Promise');
+var Promise = require('../src/main');
 var Mocha = require("mocha");
 var path = require("path");
 var fs = require("fs");
 var _ = require("underscore");
+
+// 先覆盖掉默认的打印函数
+Promise.onReject(function () {});
 
 var adapter = {
     resolved: function (v) {
@@ -26,7 +29,12 @@ var adapter = {
 
 var testsDir = path.resolve(__dirname, "spec/promise-aplus-tests");
 
-var enhancements = [path.resolve(__dirname, "spec/syncMode.js")];
+var enhancements = [
+    path.resolve(__dirname, "spec/syncMode.js"),
+    path.resolve(__dirname, "spec/invoke.js"),
+    path.resolve(__dirname, "spec/then.js"),
+    path.resolve(__dirname, "spec/hook.js")
+];
 
 function run(adapter, mochaOpts, cb) {
     if (typeof mochaOpts === "function") {
@@ -37,7 +45,7 @@ function run(adapter, mochaOpts, cb) {
         cb = function () { };
     }
 
-    mochaOpts = _.defaults(mochaOpts, { timeout: 200, slow: Infinity });
+    mochaOpts = _.defaults(mochaOpts, {timeout: 200, slow: Infinity});
     fs.readdir(testsDir, function (err, testFileNames) {
         if (err) {
             cb(err);
