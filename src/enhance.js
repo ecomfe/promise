@@ -35,12 +35,20 @@ void function (define, global) {
              */
             function promiseRequire(modules) {
                 // 这个函数不实现 node 版本了，没啥意义。。
+                var isAborted = false;
                 var promise = new this(
                     function (resolve, reject) {
-                        global.require(modules, resolve);
-                        promise.abort = reject;
+                        global.require(
+                            modules,
+                            function () {
+                                !isAborted && resolve([].slice.call(arguments));
+                            }
+                        );
                     }
                 );
+                promise.abort = function () {
+                    isAborted = true;
+                };
 
                 return promise;
             }
@@ -76,7 +84,7 @@ void function (define, global) {
                             function () {
                                 throw reason;
                             }
-                        )
+                        );
                     }
                 );
             }
@@ -110,8 +118,8 @@ void function (define, global) {
              *
              * @static
              * @member Promise
-             * @param {*} value
-             * @returns {Promise}
+             * @param {*} value 传入的值
+             * @return {Promise}
              */
             function cast(value) {
                 if (value && typeof value === 'object' && value.constructor === this) {
