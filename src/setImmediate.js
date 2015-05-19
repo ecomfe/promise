@@ -45,11 +45,13 @@ void function (define) {
             //
             // 主要参考自https://github.com/YuzuJS/setImmediate
             if (typeof global.setImmediate === 'function') {
-                return require('./util').bind(global.setImmediate, global);
+                return function (fn) {
+                    global.setImmediate(fn);
+                };
             }
 
-            if (typeof global.nextTick === 'function') {
-                return global.nextTick;
+            if (typeof process !== 'undefined' && typeof process.nextTick === 'function') {
+                return process.nextTick;
             }
 
             if (global.MutationObserver || global.webKitMutationObserver) {
@@ -70,7 +72,7 @@ void function (define) {
                     // 从异步来说，每个callstack应该只执行一个函数，因此这里不能共享`MutationObserver`实例，
                     // 共享的情况下，由于浏览器使用的是microtask queue，会让多次变更在一次回调中体现，导致无法保持单独的callstack
                     var observer = new MutationObserver(ensureElementMutation);
-                    observer.observe(element, { attributes: true });
+                    observer.observe(element, {attributes: true});
 
                     var tick = registerCallback(callback);
                     element.setAttribute(ATTRIBUTE_NAME, tick);
@@ -83,7 +85,7 @@ void function (define) {
                 // 部分IE的`postMessage`的`callback`是同步触发的，要去掉这一批
                 var isPostMessageAsync = true;
                 var oldListener = global.onmessage;
-                global.onmessage = function() {
+                global.onmessage = function () {
                     isPostMessageAsync = false;
                 };
                 global.postMessage('', '*');
