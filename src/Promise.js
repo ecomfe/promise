@@ -33,13 +33,22 @@ void function (define, global, undefined) {
                 // https://github.com/domenic/promises-unwrapping
                 if (!(this instanceof Promise)) {
                     throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, '
-                        + 'this object constructor cannot be called as a function.');
+                    + 'this object constructor cannot be called as a function.');
                 }
 
                 var capacity = new PromiseCapacity(this);
                 // 不想将私有状态挂在 promise 上，所以只能动态绑定了。
-                this.then = u.bind(capacity.then, capacity);
-                executor(u.bind(capacity.resolve, capacity), u.bind(capacity.reject, capacity));
+                this.then = function (fulfilled, rejected) {
+                    return capacity.then(fulfilled, rejected);
+                };
+
+                var reject = createResolver(capacity, 'reject');
+                try {
+                    executor(createResolver(capacity, 'resolve'), reject);
+                }
+                catch (e) {
+                    reject(e);
+                }
             }
 
             /**
@@ -157,6 +166,12 @@ void function (define, global, undefined) {
                     }
                 });
             };
+
+            function createResolver(capacity, type) {
+                return function (v) {
+                    return capacity[type](v);
+                };
+            }
 
             return Promise;
         }

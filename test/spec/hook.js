@@ -6,10 +6,10 @@ describe("Promise hook test.", function () {
     specify("onResolve test", function (done) {
         var result = null;
         var called = false;
-        Promise.onResolve(function (value) {
+        Promise.onResolve = function (promise, value) {
             result = value;
             called = true;
-        });
+        };
 
         var promise = Promise.resolve({});
 
@@ -29,10 +29,10 @@ describe("Promise hook test.", function () {
     specify("onReject test", function (done) {
         var result = null;
         var called = false;
-        Promise.onReject(function (value) {
+        Promise.onReject = function (promise, value) {
             result = value;
             called = true;
-        });
+        };
 
         var promise = Promise.reject({});
 
