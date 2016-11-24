@@ -5,7 +5,7 @@ var fs = require("fs");
 var _ = require("underscore");
 
 // 先覆盖掉默认的打印函数
-Promise.onReject(function () {});
+Promise.onReject = null;
 
 var adapter = {
     resolved: function (v) {
