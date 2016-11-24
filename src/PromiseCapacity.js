@@ -39,12 +39,6 @@ void function (define) {
                 this.invoke = setImmediate;
             }
 
-            PromiseCapacity.onResolve = function (value) {};
-            PromiseCapacity.onReject = function (reason) {
-                typeof console !== 'undefined' && console.error(reason);
-            };
-
-
             PromiseCapacity.prototype = {
                 constructor: PromiseCapacity,
 
@@ -65,7 +59,7 @@ void function (define) {
                         // reject promise with e as the reason
                         var then = u.getThen(value);
                         if (typeof then === 'function') {
-                            chain(u.bind(then, value), this);
+                            chain(u.bindThen(then, value), this);
                             return;
                         }
                     }
@@ -81,8 +75,7 @@ void function (define) {
                     this.result = value;
                     this.status = FULFILLED;
 
-                    this.constructor.onResolve.call(this.promise, value);
-
+                    onResolve(this.promise, value);
                     exec(this);
                 },
 
@@ -94,8 +87,7 @@ void function (define) {
                     this.result = obj;
                     this.status = REJECTED;
 
-                    this.constructor.onReject.call(this.promise, obj);
-
+                    onReject(this.promise, obj);
                     exec(this);
                 },
 
@@ -187,6 +179,16 @@ void function (define) {
                         callback(val);
                     }
                 });
+            }
+
+            function onResolve(promise, value) {
+                var onResolve = promise.constructor.onResolve;
+                typeof onResolve === 'function' && onResolve(promise, value);
+            }
+
+            function onReject(promise, reason) {
+                var onReject = promise.constructor.onReject;
+                typeof onReject === 'function' && onReject(promise, reason);
             }
 
             return PromiseCapacity;

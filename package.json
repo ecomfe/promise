@@ -1,27 +1,28 @@
 {
-  "name": "promise",
-  "version": "1.0.2",
-  "description": "A promise respecting ES standard with plenty of handy extensions",
-  "main": "main.js",
-  "author": "d_xinxin@163.com",
-  "homepage": "https://github.com/ecomfe/promise",
-  "repository": "https://github.com/ecomfe/promise",
-  "license": "BSD",
-  "readme": "README.md",
-  "scripts": {
-      "test": "node test/run.js"
-  },
-  "edp": {
-    "wwwroot": "/",
-    "depDir": "dep",
-    "srcDir": "src",
-    "loaderAutoConfig": "js,htm,html,tpl,vm,phtml",
-    "loaderUrl": "http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-2/esl.js"
-  },
-  "devDependencies": {
-    "mocha": "^1.21.4",
-    "promises-aplus-tests": "^2.0.4",
-    "sinon": "^1.10.3",
-    "underscore": "^1.6.0"
-  }
+    "name": "promise",
+    "version": "1.0.2",
+    "description": "A promise respecting ES standard with plenty of handy extensions",
+    "main": "src/main.js",
+    "author": "d_xinxin@163.com",
+    "homepage": "https://github.com/ecomfe/promise",
+    "repository": "https://github.com/ecomfe/promise",
+    "license": "MIT",
+    "readme": "README.md",
+    "scripts": {
+        "test": "node test/run.js"
+    },
+    "edp": {
+      "wwwroot": "/",
+      "depDir": "dep",
+      "main": "main.js",
+      "srcDir": "src",
+      "loaderAutoConfig": "js,htm,html,tpl,vm,phtml",
+      "loaderUrl": "http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-2/esl.js"
+    },
+    "devDependencies": {
+      "mocha": "^1.21.4",
+      "promises-aplus-tests": "^2.0.4",
+      "sinon": "^1.10.3",
+      "underscore": "^1.6.0"
+    }
 }

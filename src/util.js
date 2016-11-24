@@ -54,6 +54,12 @@ void function (define) {
                 return promise && (typeof promise === 'object' || typeof promise === 'function') && promise.then;
             };
 
+            util.bindThen = function (then, thenable) {
+                return function (fulfilled, rejected) {
+                    return then.call(thenable, fulfilled, rejected);
+                }
+            };
+
             return util;
         }
     );
