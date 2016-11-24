@@ -1,6 +1,6 @@
 {
     "name": "promise",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "A promise respecting ES standard with plenty of handy extensions",
     "main": "src/main.js",
     "author": "d_xinxin@163.com",
